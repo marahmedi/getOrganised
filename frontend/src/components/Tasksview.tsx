@@ -30,7 +30,7 @@ const Tasksview: React.FC = () => {
         <div className="flex justify-start gap-6 w-[40rem] items-center">
           <button className="rounded-xl w-[1.8rem] h-[1.8rem] border-2 border-gray-300 cursor-pointer" />
           <p className="w-[13rem]">{task.task_name}</p>
-          <p className="w-[6rem] text-gray-400 text-sm">{task.list_name}</p>
+          <p className="w-[6rem] text-[#366ED8] text-sm">{task.list_name}</p>
         </div>
         <div className="flex justify-between w-[9rem] items-center">
           <div className="bg-gray-100 px-2 py-1 rounded-xl text-sm text-gray-500 flex items-center justify-between">
