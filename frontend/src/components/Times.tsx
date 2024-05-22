@@ -5,7 +5,6 @@ const timesArray: number[] = []
 for( let i =1; i < 25; i++){
     timesArray.push(i)
 }
-console.log(timesArray)
 
 const Times: React.FC = () => {
   return (

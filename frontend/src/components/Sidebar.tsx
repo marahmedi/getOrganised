@@ -26,6 +26,8 @@ const Sidebar: React.FC = () => {
     setTotalTasks(total);
   }, [lists]);
 
+  console.log(totalTasks)
+
   return (
     <aside className="w-[22.5rem] h-[calc(100vh-2rem)] mt-[1rem] mb-[1rem] ml-[0.7rem] rounded-2xl bg-white py-12 px-5">
       <h1 className="text-2xl text-center font-bold mb-10">All lists</h1>

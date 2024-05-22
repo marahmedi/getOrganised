@@ -25,8 +25,8 @@ const Tasksview: React.FC = () => {
 
   return (
     <div className="mt-8 px-2 py-3">
-      {tasks.map((task)=> (
-      <div className="bg-white py-2 px-4 w-100 rounded-xl flex justify-between items-center mb-2">
+      {tasks.map((task, index)=> (
+      <div key={index} className="bg-white py-2 px-4 w-100 rounded-xl flex justify-between items-center mb-2">
         <div className="flex justify-start gap-6 w-[40rem] items-center">
           <button className="rounded-xl w-[1.8rem] h-[1.8rem] border-2 border-gray-300 cursor-pointer" />
           <p className="w-[13rem]">{task.task_name}</p>
