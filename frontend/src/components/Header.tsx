@@ -1,6 +1,7 @@
 import React from "react";
 import wavingHandImage from "../waving-hand.png";
 import arrow from "../arrow-down.png";
+import { formattedDate } from '../utils';
 
 interface HeaderProps {
   title: string;
@@ -19,7 +20,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
           />
         </div>
         <p className="m-t[0.5rem] font-medium text-xl text-gray-400">
-          Today, Monday 5th June 2024
+          Today, {formattedDate}
         </p>
       </div>
       <div>

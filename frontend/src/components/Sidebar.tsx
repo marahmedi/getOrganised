@@ -1,20 +1,32 @@
-import React from "react";
+import React,{useEffect, useState} from "react";
 
-interface SidebarProps {
-  title: string;
+interface List {
+  list_id: number;
+  list_name: string;
+  user_id: number;
+  task_count: number;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ title }) => {
+const Sidebar: React.FC = () => {
+
+  const [lists, setLists] = useState<List[]>([])
+
+  useEffect(() => {
+    fetch('http://localhost:4000/lists/')
+    .then(response => response.json())
+    .then((data: List[]) => setLists(data))
+  }, [])
   return (
     <aside className="w-[22.5rem] h-[calc(100vh-2rem)] mt-[1rem] mb-[1rem] ml-[0.7rem] rounded-2xl bg-white py-12 px-5">
-      <h1 className="text-2xl font-bold">{title}</h1>
-      <ul className="mt-[1rem]">
-        <li className="rounded-xl hover:bg-gray-50 px-2 py-2 cursor-pointer">
-            <img/>
-            <span>name</span>
-            <span>4</span>
-        </li>
-        
+      <h1 className="text-2xl text-center font-bold mb-10">All lists</h1>
+      <ul className="mt-[1rem] overflow-y-auto">
+        {lists.map((list, index) =>(
+          <li key={index} className="rounded-xl flex justify-between items-center w-full hover:bg-gray-50 px-3 py-2 cursor-pointer mb-3">
+          <p className="w-[5rem]">{list.list_name}</p>
+          <div className="p-1 rounded-xl w-[1.8rem] text-sm h-[1.8rem] text-gray-400 bg-gray-50 text-center">{list.task_count}</div>
+      </li>
+        ))}
+
       </ul>
     </aside>
   );
