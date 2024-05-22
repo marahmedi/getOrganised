@@ -3,77 +3,83 @@ import { pool } from "../app";
 
 // Get today's date in YYYY-MM-DD format
 const todayDate = new Date().toISOString().split("T")[0];
-console.log(new Date())
+console.log(new Date());
 
 const createTask = (req: Request, res: Response): void => {
-    const { task_name, due_datetime, list_id, list_name, user_id } = req.body;
-  
-    pool.query("BEGIN", async (beginErr) => {
-      if (beginErr) {
-        console.error("Error starting transaction:", beginErr);
-        res.status(500).json({ error: "Internal server error" });
-        return;
-      }
-  
-      try {
-        let finalListId: number;
-  
-        if (list_id) {
-          // Use the provided list_id
-          finalListId = list_id;
-        } else if (list_name) {
-          // Create a new list if list_name is provided
-          const newListResult = await pool.query(
-            "INSERT INTO lists (list_name, user_id) VALUES ($1, $2) RETURNING list_id",
-            [list_name, user_id] // Assuming user ID is available in the request
-          );
-  
-          finalListId = newListResult.rows[0].list_id;
-        } else {
-          // Return an error if neither list_id nor list_name is provided
-          pool.query("ROLLBACK", (rollbackErr) => {
-            if (rollbackErr) {
-              console.error("Error rolling back transaction:", rollbackErr);
-            }
-            res
-              .status(400)
-              .json({ error: "Either list_id or list_name must be provided" });
-          });
-          return;
-        }
-  
-        // Insert the new task into the database using the finalListId
-        await pool.query(
-          "INSERT INTO tasks (task_name, due_datetime, list_id, status) VALUES ($1, $2, $3, $4)",
-          [task_name, due_datetime, finalListId, false]
+  const { task_name, due_datetime, list_id, list_name, user_id } = req.body;
+
+  pool.query("BEGIN", async (beginErr) => {
+    if (beginErr) {
+      console.error("Error starting transaction:", beginErr);
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+
+    try {
+      let finalListId: number;
+
+      if (list_id) {
+        // Use the provided list_id
+        finalListId = list_id;
+      } else if (list_name) {
+        // Create a new list if list_name is provided
+        const newListResult = await pool.query(
+          "INSERT INTO lists (list_name, user_id) VALUES ($1, $2) RETURNING list_id",
+          [list_name, user_id] // Assuming user ID is available in the request
         );
-  
-        // Commit the transaction
-        pool.query("COMMIT", (commitErr) => {
-          if (commitErr) {
-            console.error("Error committing transaction:", commitErr);
-            res.status(500).json({ error: "Internal server error when committing" });
-            return;
-          }
-  
-          res.status(201).json({ message: "Task created successfully" });
-        });
-      } catch (error) {
-        // Rollback the transaction in case of an error
+
+        finalListId = newListResult.rows[0].list_id;
+      } else {
+        // Return an error if neither list_id nor list_name is provided
         pool.query("ROLLBACK", (rollbackErr) => {
           if (rollbackErr) {
             console.error("Error rolling back transaction:", rollbackErr);
           }
-          console.error("Error creating new task:", error);
-          res.status(500).json({ error: "Internal server error" });
+          res
+            .status(400)
+            .json({ error: "Either list_id or list_name must be provided" });
         });
+        return;
       }
-    });
-  };
-  
+
+      // Insert the new task into the database using the finalListId
+      await pool.query(
+        "INSERT INTO tasks (task_name, due_datetime, list_id, list_name, status) VALUES ($1, $2, $3, $4, $5)",
+        [task_name, due_datetime, finalListId, list_name, false]
+      );
+
+      // Increment the task_count for the corresponding list_id in the lists table
+      await pool.query(
+        "UPDATE lists SET task_count = task_count + 1 WHERE list_id = $1",
+        [finalListId]
+      );
+
+      // Commit the transaction
+      pool.query("COMMIT", (commitErr) => {
+        if (commitErr) {
+          console.error("Error committing transaction:", commitErr);
+          res
+            .status(500)
+            .json({ error: "Internal server error when committing" });
+          return;
+        }
+
+        res.status(201).json({ message: "Task created successfully" });
+      });
+    } catch (error) {
+      // Rollback the transaction in case of an error
+      pool.query("ROLLBACK", (rollbackErr) => {
+        if (rollbackErr) {
+          console.error("Error rolling back transaction:", rollbackErr);
+        }
+        console.error("Error creating new task:", error);
+        res.status(500).json({ error: "Internal server error" });
+      });
+    }
+  });
+};
 
 const getTasksForToday = (req: Request, res: Response): void => {
-
   // Retrieve tasks for today's date from the database
   pool.query(
     "SELECT * FROM tasks WHERE DATE(due_datetime) = $1",
@@ -110,11 +116,10 @@ const getTasksForDate = (req: Request, res: Response): void => {
 };
 
 const getTasksForListAndToday = (req: Request, res: Response): void => {
-
-    const listId: string = req.params.list_id;
+  const listId: string = req.params.list_id;
 
   pool.query(
-    'SELECT * FROM tasks WHERE list_id = $1 AND DATE(due_datetime) = $2',
+    "SELECT * FROM tasks WHERE list_id = $1 AND DATE(due_datetime) = $2",
     [listId, todayDate],
     (err, result) => {
       if (err) {
@@ -129,12 +134,11 @@ const getTasksForListAndToday = (req: Request, res: Response): void => {
   );
 };
 const getTasksForListAndDate = (req: Request, res: Response): void => {
-
-    const date = req.params.date;
-    const listId = req.params.list_id
+  const date = req.params.date;
+  const listId = req.params.list_id;
 
   pool.query(
-    'SELECT * FROM tasks WHERE list_id = $1 AND DATE(due_datetime) = $2',
+    "SELECT * FROM tasks WHERE list_id = $1 AND DATE(due_datetime) = $2",
     [listId, date],
     (err, result) => {
       if (err) {
@@ -149,9 +153,8 @@ const getTasksForListAndDate = (req: Request, res: Response): void => {
   );
 };
 const getCompletedTasksForToday = (req: Request, res: Response): void => {
-
   pool.query(
-    'SELECT * FROM tasks WHERE status = $1 AND DATE(due_datetime) = $2',
+    "SELECT * FROM tasks WHERE status = $1 AND DATE(due_datetime) = $2",
     [true, todayDate],
     (err, result) => {
       if (err) {
@@ -166,11 +169,10 @@ const getCompletedTasksForToday = (req: Request, res: Response): void => {
   );
 };
 const getCompletedTasksForDate = (req: Request, res: Response): void => {
-
-    const date = req.params.date;
+  const date = req.params.date;
 
   pool.query(
-    'SELECT * FROM tasks WHERE list_id = $1 AND DATE(due_datetime) = $2',
+    "SELECT * FROM tasks WHERE list_id = $1 AND DATE(due_datetime) = $2",
     [true, date],
     (err, result) => {
       if (err) {
