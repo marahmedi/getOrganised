@@ -1,11 +1,19 @@
-import React from "react";
+import React, { useState } from "react";
+import Signup from "../components/Signup";
+import Login from "../components/Login";
 
-interface UserPageProps {
-  title: string;
-}
+const UserPage: React.FC = () => {
+  const [showSignUp, setShowSignUp] = useState(true);
 
-const UserPage: React.FC<UserPageProps> = () => {
-  return <div className="flex justify-center">login or sign up</div>;
+  return (
+    <div className="flex items-center justify-center">
+      {showSignUp ? (
+        <Signup setShowSignUp={setShowSignUp} showSignUp={showSignUp} />
+      ) : (
+        <Login setShowSignUp={setShowSignUp} showSignUp={showSignUp} />
+      )}
+    </div>
+  );
 };
 
 export default UserPage;
