@@ -6,6 +6,7 @@ import { Pool } from 'pg';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
 import taskRoutes from './routes/taskRoutes';
+import listRoutes from './routes/listRoutes'
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ app.use(bodyParser.json());
 // Routes
 app.use('/auth', authRoutes);
 app.use('/tasks', taskRoutes);
+app.use('/lists', listRoutes);
 
 const pool = new Pool({
   user: process.env.DB_USER,

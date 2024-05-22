@@ -3,6 +3,7 @@ import { pool } from "../app";
 
 // Get today's date in YYYY-MM-DD format
 const todayDate = new Date().toISOString().split("T")[0];
+console.log(new Date())
 
 const createTask = (req: Request, res: Response): void => {
     const { task_name, due_datetime, list_id, list_name, user_id } = req.body;
