@@ -1,5 +1,5 @@
 import React from 'react'
-import plus from "../plus.png";
+import plus from "../images/plus.png";
 
 interface CreateTaskBtnProps {
     setOpen: (value: boolean) => void;

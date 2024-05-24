@@ -1,6 +1,6 @@
 import React from "react";
-import wavingHandImage from "../waving-hand.png";
-import arrow from "../arrow-down.png";
+import wavingHandImage from "../images/waving-hand.png";
+import arrow from "../images/arrow-down.png";
 import { formattedDate } from '../utils';
 
 interface HeaderProps {
@@ -19,7 +19,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
             alt="waving hand"
           />
         </div>
-        <p className="m-t[0.5rem] font-medium text-xl text-gray-400">
+        <p className="m-t[0.5rem] font-medium mb-3 text-xl text-gray-400">
           Today, {formattedDate}
         </p>
       </div>
