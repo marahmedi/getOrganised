@@ -7,6 +7,7 @@ export interface Task {
     status: boolean;
     list_id: number;
     list_name: string;
+    notes: string;
 }
 
 export interface List {

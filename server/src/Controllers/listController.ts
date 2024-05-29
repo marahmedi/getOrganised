@@ -4,7 +4,6 @@ import { pool } from "../app";
 
 const getAllLists = (req: Request, res: Response): void => {
 
-    // Retrieve tasks for today's date from the database
     pool.query(
       "SELECT * FROM lists ORDER BY list_id",
       (err, result) => {
@@ -19,5 +18,7 @@ const getAllLists = (req: Request, res: Response): void => {
       }
     );
 };
+
+
 
 export {getAllLists}

@@ -1,30 +1,48 @@
 import React, { useEffect, useState } from "react";
-import { List } from "../interfaces";
+import { List, Task } from "../interfaces";
 
 interface SideBarProps {
   selectedList: string | null;
   setSelectedList: (value: string | null) => void;
+  tasks: Task[]
 }
 
-const Sidebar: React.FC<SideBarProps> = ({ selectedList, setSelectedList }) => {
-  console.log(selectedList);
+interface tasksForList {
+  list_name: string;
+  task_count: number;
+}
+
+const Sidebar: React.FC<SideBarProps> = ({ selectedList, setSelectedList, tasks }) => {
+  
 
   const [lists, setLists] = useState<List[]>([]);
   const [totalTasks, setTotalTasks] = useState<number>(0);
+  const [tasksForList, setTasksForList] = useState<tasksForList[]>([]);
 
-  useEffect(() => {
+  const fetchLists = () => {
     fetch("http://localhost:4000/lists/")
       .then((response) => response.json())
       .then((data: List[]) => setLists(data));
-  }, []);
+  };
+
+  console.log(lists)
 
   useEffect(() => {
-    let total = 0;
-    lists.forEach((list) => {
-      total += list.task_count;
+    fetchLists();
+  }, [tasks]);
+
+  useEffect(() => {
+    setTotalTasks(tasks.length);
+    updateTaskCounts();
+  }, [lists, tasks]);
+
+  const updateTaskCounts = () => {
+    const taskCounts = lists.map((list) => {
+      const taskCount = tasks.filter(task => task.list_id === list.list_id).length;
+      return { list_name: list.list_name, task_count: taskCount };
     });
-    setTotalTasks(total);
-  }, [lists]);
+    setTasksForList(taskCounts);
+  };
 
   const getClassName = (listName: string) => {
     return selectedList === listName || (listName === "All" && selectedList === null) ? "bg-gray-50" : "";
@@ -45,17 +63,17 @@ const Sidebar: React.FC<SideBarProps> = ({ selectedList, setSelectedList }) => {
             {totalTasks}
           </div>
         </li>
-        {lists.map((list, index) => (
+        {tasksForList.map((taskForList, index) => (
           <li
             key={index}
             className={`rounded-xl flex justify-between items-center w-full px-3 py-2 cursor-pointer mb-3 ${getClassName(
-              list.list_name
+              taskForList.list_name
             )}`}
-            onClick={() => setSelectedList(list.list_name)}
+            onClick={() => setSelectedList(taskForList.list_name)}
           >
-            <p className="w-[5rem]">{list.list_name}</p>
+            <p className="w-[5rem]">{taskForList.list_name}</p>
             <div className="p-1 rounded-xl w-[1.8rem] text-sm h-[1.8rem] text-gray-400 bg-gray-50 text-center">
-              {list.task_count}
+              {taskForList.task_count}
             </div>
           </li>
         ))}

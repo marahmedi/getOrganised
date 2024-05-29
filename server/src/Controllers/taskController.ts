@@ -6,7 +6,16 @@ const todayDate = new Date().toISOString().split("T")[0];
 console.log(new Date());
 
 const createTask = (req: Request, res: Response): void => {
-  const { task_name, due_datetime, list_id, list_name, user_id } = req.body;
+  const {
+    task_name,
+    start_time,
+    end_time,
+    list_id,
+    list_name,
+    user_id,
+    task_date,
+    notes,
+  } = req.body;
 
   pool.query("BEGIN", async (beginErr) => {
     if (beginErr) {
@@ -44,8 +53,8 @@ const createTask = (req: Request, res: Response): void => {
 
       // Insert the new task into the database using the finalListId
       await pool.query(
-        "INSERT INTO tasks (task_name, due_datetime, list_id, list_name, status) VALUES ($1, $2, $3, $4, $5)",
-        [task_name, due_datetime, finalListId, list_name, false]
+        "INSERT INTO tasks (task_name, start_time, end_time, status, list_name, list_id, task_date, notes ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+        [task_name, start_time, end_time, false, list_name, list_id, task_date, notes]
       );
 
       // Increment the task_count for the corresponding list_id in the lists table
@@ -105,6 +114,25 @@ const getTasksForDate = (req: Request, res: Response): void => {
     (err, result) => {
       if (err) {
         console.error("Error retrieving tasks for today:", err);
+        res.status(500).json({ error: "Internal server error" });
+        return;
+      }
+
+      const tasks = result.rows;
+      res.status(200).json(tasks);
+    }
+  );
+};
+
+const getTasksFromListName = (req: Request, res: Response): void => {
+  const list_name = req.params.listname;
+
+  pool.query(
+    `SELECT * FROM tasks WHERE list_name = $1 `,
+    [list_name],
+    (err, result) => {
+      if (err) {
+        console.error("Error retrieving tasks for this list name:", err);
         res.status(500).json({ error: "Internal server error" });
         return;
       }
@@ -186,13 +214,49 @@ const getCompletedTasksForDate = (req: Request, res: Response): void => {
     }
   );
 };
+const getAllTasks = (req: Request, res: Response): void => {
+  pool.query("SELECT * FROM tasks ", (err, result) => {
+    if (err) {
+      console.error("Error retrieving tasks for today:", err);
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+
+    const tasks = result.rows;
+    res.status(200).json(tasks);
+  });
+};
+
+export const deleteTask = (req: Request, res: Response): void => {
+  const taskId = req.params.task_id;
+  pool.query(
+    "DELETE FROM tasks WHERE task_id = $1",
+    [taskId],
+    (err, result) => {
+      if (err) {
+        console.error("Error deleting this task:", err);
+        res.status(500).json({ error: "Internal server error" });
+        return;
+      }
+
+      if (result.rowCount === 0) {
+        res.status(404).json({ error: "Task not found" });
+        return;
+      }
+
+      res.status(200).json({ message: "Task deleted successfully" });
+    }
+  );
+};
 
 export {
   createTask,
+  getTasksFromListName,
   getTasksForToday,
   getTasksForDate,
   getTasksForListAndToday,
   getTasksForListAndDate,
   getCompletedTasksForToday,
   getCompletedTasksForDate,
+  getAllTasks,
 };

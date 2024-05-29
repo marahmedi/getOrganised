@@ -4,6 +4,10 @@ import calenderBlue from "../images/calender-b.png";
 import arrowRight from "../images/arrow-right.png";
 import arrowLeft from "../images/arrow-left.png";
 
+interface DatesProps {
+  setDay: (value: string) => void;
+}
+
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const monthsOfYear = [
   "Jan",
@@ -25,12 +29,14 @@ for (let i = 0; i < 42; i++) {
   numOfCircles.push(i); //
 }
 
-const Dates: React.FC = () => {
+const Dates: React.FC<DatesProps> = ({ setDay }) => {
   const today = dayjs();
   const [currentMonth, setCurrentMonth] = useState(today.month());
   const [currentYear, setCurrentYear] = useState(today.year());
 
-  const startOfMonth = dayjs(new Date(currentYear, currentMonth, 1)).startOf("week"); // Start from the first day of the week
+  const startOfMonth = dayjs(new Date(currentYear, currentMonth, 1)).startOf(
+    "week"
+  ); // Start from the first day of the week
   const endOfMonth = dayjs(new Date(currentYear, currentMonth + 1, 0));
   const daysInMonth = endOfMonth.date();
 
@@ -38,6 +44,11 @@ const Dates: React.FC = () => {
   for (let i = 1; i <= daysInMonth; i++) {
     datesArray.push(i);
   }
+
+  const handleDate = (day: number) => {
+    // Use number for day parameter
+    setDay(`${day} ${monthsOfYear[currentMonth]} ${currentYear}`); // Format the date string correctly
+  };
 
   const changeMonth = (where: string) => {
     if (where === "next") {
@@ -59,8 +70,11 @@ const Dates: React.FC = () => {
 
   return (
     <div className="w-[28rem] mb-4">
-      <div className="bg-[#EEF7FF] h-[2.9rem] w-[28.6rem] rounded-3xl flex items-center justify-between px-2">
-        <button className="bg-white h-[2rem] w-[2rem] rounded-2xl" onClick={() => changeMonth("back")}>
+      <div className="bg-[#EEF7FF]  h-[2.9rem] w-[28.6rem] rounded-3xl flex items-center justify-between px-2">
+        <button
+          className="bg-white h-[2rem] w-[2rem] rounded-2xl"
+          onClick={() => changeMonth("back")}
+        >
           <img
             src={arrowLeft}
             alt="arrow-left"
@@ -75,7 +89,10 @@ const Dates: React.FC = () => {
           />
           <span className="text-[#366ED8]">{`${monthsOfYear[currentMonth]}, ${currentYear}`}</span>
         </div>
-        <button className="bg-white h-[2rem] w-[2rem] rounded-2xl" onClick={() => changeMonth("next")}>
+        <button
+          className="bg-white h-[2rem] w-[2rem] rounded-2xl"
+          onClick={() => changeMonth("next")}
+        >
           <img
             src={arrowRight}
             alt="arrow-right"
@@ -83,7 +100,7 @@ const Dates: React.FC = () => {
           />
         </button>
       </div>
-      <div className="grid grid-cols-7 text-sm text-center mt-2 mb-4">
+      <div className="grid grid-cols-7 text-sm text-center mt-6 mb-4">
         {daysOfWeek.map((day) => (
           <div key={day}>{day}</div>
         ))}
@@ -91,16 +108,11 @@ const Dates: React.FC = () => {
 
       {/* Dates Grid */}
       <div className="pl-4 grid grid-cols-7 gap-2 justify-center">
-        {Array(startOfMonth.day())
-          .fill(null)
-          .map((_, index) => (
-            <div key={`empty-${index}`} className="w-[2.4rem] h-[2.4rem] rounded-full bg-gray-200 text-gray-200 text-sm"></div>
-          ))}
-
         {datesArray.map((date) => (
           <div
             key={date}
-            className=" cursor-pointer w-[2.4rem] h-[2.4rem] rounded-full bg-gray-100 text-gray-700 text-sm flex items-center justify-center cursor-pointer"
+            className=" cursor-pointer w-[2.4rem] h-[2.4rem] rounded-full bg-gray-100 text-gray-700 text-sm flex items-center justify-center cursor-pointer mb-1"
+            onClick={() => handleDate(date)}
           >
             {date}
           </div>

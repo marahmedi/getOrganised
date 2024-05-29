@@ -5,4 +5,5 @@ const router: Router = express.Router();
 
 router.get('/', getAllLists)
 
+
 export default router

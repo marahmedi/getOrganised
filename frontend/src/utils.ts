@@ -91,7 +91,6 @@ export const fetchTasks = async (
 
   try {
     const response = await fetch(url);
-    console.log(response)
     const data = await response.json();
     setTasks(data);
   } catch (error) {
@@ -162,6 +161,29 @@ export const formatNumberToTime = (input: number | null): string => {
     const formattedEndTime = formatTime(endTime);
   
     return `${formattedStartTime} - ${formattedEndTime}`;
+  };
+
+  export const formatDay = (day: string): string => {
+    const suffixes = ["th", "st", "nd", "rd"];
+    
+    // Split the input string into parts
+    const [dayNumberStr, month, year] = day.split(' ');
+  
+    // Convert dayNumberStr to an integer
+    const dayNumber = parseInt(dayNumberStr, 10);
+  
+    // Determine the correct suffix
+    const daySuffix =
+      dayNumber % 10 === 1 && dayNumber !== 11
+        ? suffixes[1]
+        : dayNumber % 10 === 2 && dayNumber !== 12
+        ? suffixes[2]
+        : dayNumber % 10 === 3 && dayNumber !== 13
+        ? suffixes[3]
+        : suffixes[0];
+  
+    // Return the formatted string without the year
+    return `${dayNumber}${daySuffix} ${month}`;
   };
 
   

@@ -26,11 +26,12 @@ const HomePage: React.FC<HomepageProps> = ({ title }) => {
   
   return (
     <div className="flex h-screen">
-      <Sidebar selectedList={selectedList} setSelectedList={setSelectedList}/>
+      <Sidebar selectedList={selectedList} setSelectedList={setSelectedList} tasks={tasks}/>
       <div className="flex flex-col w-full px-12 py-8 w-[65rem]">
         <Header title="Good Morning, Marah" />
         <div className="flex-1 overflow-y-auto">
           <Tasksview
+          setTasks={setTasks}
           tasks={tasks}
           />
         </div>
