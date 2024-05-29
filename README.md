@@ -57,7 +57,7 @@ Replace the placeholder values with your actual PostgreSQL database credentials.
 ### Project Structure
 
 my-project/
-├── backend/ # Node.js backend
+├── server/ # Node.js backend
 │ ├── package.json # Backend dependencies
 │ ├── index.js # Entry point for the backend
 | ├── .gitignore # Git ignore file
