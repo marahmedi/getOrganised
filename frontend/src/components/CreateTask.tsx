@@ -6,18 +6,13 @@ import CalenderW from "../images/calender-w.png";
 import Notes from "./Notes";
 import notes from "../images/notes.png";
 import notesW from "../images/notes-w.png";
+import {List} from "../interfaces"
 import {
   formatNumberToTime,
   formatTimeRangeAmPm,
   formatDay,
 } from "../utils";
 
-interface List {
-  list_id: number;
-  list_name: string;
-  user_id: number;
-  task_count: number;
-}
 
 const CreateTask: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -38,15 +33,29 @@ const CreateTask: React.FC = () => {
 
   const addTask = async () => {
     const url = "http://localhost:4000/tasks/";
-    const data = {
-      task_name: taskName,
-      start_time: formatNumberToTime(startTime),
-      end_time: formatNumberToTime(endTime),
-      list_name: lists.find((list) => list.list_id === currentList)?.list_name,
-      list_id: currentList,
-      task_date: day,
-      notes: note
-    };
+
+    let data;
+
+    if(currentList){
+      data = {
+        task_name: taskName,
+        start_time: formatNumberToTime(startTime),
+        end_time: formatNumberToTime(endTime),
+        list_name: lists.find((list) => list.list_id === currentList)?.list_name,
+        task_date: day,
+        notes: note
+      };
+    } else {
+      data = {
+        task_name: taskName,
+        start_time: formatNumberToTime(startTime),
+        end_time: formatNumberToTime(endTime),
+        list_id: 1000,
+        task_date: day,
+        notes: note
+      }
+    }
+   
 
     try {
       const response = await fetch(url, {
