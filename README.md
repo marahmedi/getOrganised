@@ -9,8 +9,6 @@ This project consists of a React frontend and a Node.js backend.
 - [Running the Project](#running-the-project)
 - [Project Structure](#project-structure)
 - [Usage](#usage)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## Requirements
 
@@ -26,7 +24,11 @@ Make sure you have the following installed on your system:
 ```bash
 git clone https://github.com/marahmedi/getOrganised.git
 cd getOrganised
+```
 
+### Running the Project
+
+```bash
 cd server
 npm install
 
@@ -51,3 +53,20 @@ DB_PASSWORD=your_db_password
 DB_PORT=5432
 
 Replace the placeholder values with your actual PostgreSQL database credentials.
+
+### Project Structure
+
+my-project/
+├── backend/ # Node.js backend
+│ ├── package.json # Backend dependencies
+│ ├── index.js # Entry point for the backend
+| ├── .gitignore # Git ignore file
+│ └── ... # Other backend files
+├── frontend/ # React frontend
+│ ├── package.json # Frontend dependencies
+│ ├── src/ # Frontend source files
+| ├── .gitignore # Git ignore file
+│ └── ... # Other frontend files
+├── README.md # Project README
+
+## Usage
