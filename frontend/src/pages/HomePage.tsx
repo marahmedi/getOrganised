@@ -6,11 +6,8 @@ import CreateTask from "../components/CreateTask";
 import {Task} from "../interfaces"
 import {fetchTasks} from "../utils"
 
-interface HomepageProps {
-  title: string;
-}
 
-const HomePage: React.FC<HomepageProps> = ({ title }) => {
+const HomePage: React.FC = () => {
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedList, setSelectedList] = useState<string | null>(null); // null means 'all lists'
