@@ -12,7 +12,12 @@ import {
   deleteTask
 } from "../controllers/taskController";
 
+const authorization = require("../middleware/authorization")
+
 const router: Router = express.Router();
+
+// Protect all routes with authorization middleware
+router.use(authorization);
 
 // POST route for creating a new task
 router.post("/", createTask);

@@ -1,57 +1,96 @@
 // authController.ts
+import { Request, Response } from "express";
+import { pool } from "../app";
 
-import { Request, Response } from 'express';
-import {pool} from '../app'; // Assuming you have a database connection pool set up
 
 interface User {
   user_id: number;
-  firstname: string;
-  lastname: string
+  user_name: string;
+  email: string;
   password: string;
 }
 
-const loginUser = (req: Request, res: Response): void => {
+const bcrypt = require("bcrypt");
+
+const jwtGenerator = require("../utils/jwtGenerator")
+
+const loginUser = async(req: Request, res: Response): Promise<any> => {
+
+  // 1. destructure the req.body
   const { email, password } = req.body;
 
-  // Check if user with provided username exists
-  pool.query<User>('SELECT * FROM users WHERE email = $1 AND password = $2', [email, password], (err, result) => {
-    if (err) {
-      console.error('Error checking user:', err);
-      res.status(500).json({ error: 'Internal server error' });
-      return;
+  
+  const user = await pool.query<User>(
+
+    // check if user doesn't exist (if not we throw an error)
+    "SELECT * FROM users WHERE email = $1 ",
+    [email],);
+
+    if(user.rows.length == 0) {
+      return res.status(401).json("Password or email is incorrect");
     }
 
-    const user = result.rows[0];
-    console.log(user);
+    // Now we know user exists
+    //3. check if user password is correct using bcrypt
 
-    if (!user) {
-      res.status(401).json({ error: 'Email or password is incorrect' });
-      return;
+    const validPassword: boolean = await bcrypt.compare(password, user.rows[0].password)
+
+    if(!validPassword){
+      return res.status(401).json("Password or email is incorrect");
     }
 
-    // Respond with user details or a success message
-    res.status(200).json({ message: 'Login successful', user });
-
-    
-  });
+    //Give the client the jwt token
+    const token = jwtGenerator(user.rows[0].user_id)
+    res.json(token)
 };
 
-const newUser = (req: Request, res: Response): void => {
-    const { firstname, lastname, email, password } = req.body;
+const newUser = async (req: Request, res: Response): Promise<any> => {
+  try {
+    // 1. destructure the req.body (user_name, email, password)
+    const { user_name, email, password } = req.body;
 
-      // Insert the new user into the database
-      pool.query(
-        'INSERT INTO users (firstname, lastname, email, password) VALUES ($1, $2, $3, $4)',
-        [firstname, lastname, email, password],
-        (queryErr) => {
-          if (queryErr) {
-            console.error('Error creating new user:', queryErr);
-            res.status(500).json({ error: 'Internal server error' });
-            return;
-          }
-          res.status(200).json({ message: 'User created successfully' });
-        }
-      );
-  };
+    //2. check if the user exists (if user exists throw error)
+    const user = await pool.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
+    if (user.rows.length !== 0) {
+      return res.status(401).send("user already exists"); // unautheticated as user already exists
+    }
+    //if user doesnt exist move on
+    //3. Bcrypt new user password
 
-export { loginUser, newUser };
+    const saltRounds = 10; // how many times password is encrypted
+
+    const salt = await bcrypt.genSalt(saltRounds);
+
+    const bcryptPassword = await bcrypt.hash(password, salt);
+
+    const newUser = await pool.query(
+      "INSERT INTO users (user_name, email, password) VALUES($1, $2, $3) RETURNING *",
+      [user_name, email, bcryptPassword]
+    );
+
+    const token = jwtGenerator(newUser.rows[0].user_id)
+
+    res.json({token})
+    
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server error");
+  }
+ 
+};
+
+const isVerified = (req: Request, res: Response) => {
+
+  try{
+
+    res.json(true)
+
+  }catch (err) {
+    console.error(err);
+    res.status(500).send("Server error");
+  }
+}
+
+export { loginUser, newUser, isVerified };

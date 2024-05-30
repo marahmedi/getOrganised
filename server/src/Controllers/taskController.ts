@@ -12,10 +12,11 @@ const createTask = (req: Request, res: Response): void => {
     end_time,
     list_id,
     list_name,
-    user_id,
     task_date,
     notes,
   } = req.body;
+
+  const user_id = (req as any).user; // Assuming user ID is stored here
 
   pool.query("BEGIN", async (beginErr) => {
     if (beginErr) {
