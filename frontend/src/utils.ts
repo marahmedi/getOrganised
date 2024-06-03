@@ -75,28 +75,38 @@ export const formatTimeRange = (startTime: string, endTime: string): string => {
   };
   
 
-export const fetchTasks = async (
-  selectedList: string | null,
-  selectedDate: string | null,
-  setTasks: (value: Task[]) => void
-) => {
-  let url = "http://localhost:4000/tasks/all";
-  if (selectedList && selectedDate) {
-    url = `http://localhost:4000/tasks/list/${selectedList}/date/${selectedDate}`;
-  } else if (selectedList) {
-    url = `http://localhost:4000/tasks/list/${selectedList}`;
-  } else if (selectedDate) {
-    url = `http://localhost:4000/tasks/date/${selectedDate}`;
-  }
-
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-    setTasks(data);
-  } catch (error) {
-    console.error("Error fetching tasks here:", error);
-  }
-};
+  export const fetchTasks = async (
+    selectedList: string | null,
+    selectedDate: string | null,
+    setTasks: (value: Task[]) => void
+  ) => {
+    let url = "http://localhost:4000/tasks/today";
+    
+    if (selectedList && selectedDate) {
+      url = `http://localhost:4000/tasks/list/${selectedList}/date/${selectedDate}`;
+    } else if (selectedList) {
+      url = `http://localhost:4000/tasks/list/${selectedList}`;
+    } else if (selectedDate) {
+      url = `http://localhost:4000/tasks/date/${selectedDate}`;
+    }
+  
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { token: localStorage.token }
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to fetch tasks');
+      }
+  
+      const data = await response.json();
+      setTasks(data);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+    }
+  };
+  
 
 export const formatNumberToTime = (input: number | null): string => {
     // If input is null or undefined, return '00:00:00'

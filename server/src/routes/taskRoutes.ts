@@ -21,7 +21,8 @@ router.use(authorization);
 
 // POST route for creating a new task
 router.post("/", createTask);
-// Get all tasks for today's date
+
+// Get all tasks 
 router.get("/all", getAllTasks);
 
 // Get all tasks for today's date

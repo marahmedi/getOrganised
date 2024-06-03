@@ -1,11 +1,14 @@
 import { Request, Response } from "express";
 import { pool } from "../app";
 
+interface CustomRequest extends Request {
+  user?: string;
+}
+
 // Get today's date in YYYY-MM-DD format
 const todayDate = new Date().toISOString().split("T")[0];
-console.log(new Date());
 
-const createTask = (req: Request, res: Response): void => {
+const createTask = async (req: Request, res: Response): Promise<void> => {
   const {
     task_name,
     start_time,
@@ -18,93 +21,83 @@ const createTask = (req: Request, res: Response): void => {
 
   const user_id = (req as any).user; // Assuming user ID is stored here
 
-  pool.query("BEGIN", async (beginErr) => {
-    if (beginErr) {
-      console.error("Error starting transaction:", beginErr);
-      res.status(500).json({ error: "Internal server error" });
+  try {
+    await pool.query("BEGIN");
+
+    let finalListId: number;
+
+    if (list_id) {
+      // Use the provided list_id
+      finalListId = list_id;
+    } else if (list_name) {
+      // Create a new list if list_name is provided
+      const newListResult = await pool.query(
+        "INSERT INTO lists (list_name, user_id) VALUES ($1, $2) RETURNING list_id",
+        [list_name, user_id]
+      );
+
+      finalListId = newListResult.rows[0].list_id;
+    } else {
+      // Return an error if neither list_id nor list_name is provided
+      await pool.query("ROLLBACK");
+      res
+        .status(400)
+        .json({ error: "Either list_id or list_name must be provided" });
       return;
     }
 
-    try {
-      let finalListId: number;
+    // Insert the new task into the database using the finalListId
+    const newTaskResult = await pool.query(
+      "INSERT INTO tasks (task_name, start_time, end_time, status, list_name, list_id, task_date, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
+      [task_name, start_time, end_time, false, list_name, finalListId, task_date, notes]
+    );
 
-      if (list_id) {
-        // Use the provided list_id
-        finalListId = list_id;
-      } else if (list_name) {
-        // Create a new list if list_name is provided
-        const newListResult = await pool.query(
-          "INSERT INTO lists (list_name, user_id) VALUES ($1, $2) RETURNING list_id",
-          [list_name, user_id] // Assuming user ID is available in the request
-        );
+    await pool.query("COMMIT");
 
-        finalListId = newListResult.rows[0].list_id;
-      } else {
-        // Return an error if neither list_id nor list_name is provided
-        pool.query("ROLLBACK", (rollbackErr) => {
-          if (rollbackErr) {
-            console.error("Error rolling back transaction:", rollbackErr);
-          }
-          res
-            .status(400)
-            .json({ error: "Either list_id or list_name must be provided" });
-        });
-        return;
-      }
-
-      // Insert the new task into the database using the finalListId
-      await pool.query(
-        "INSERT INTO tasks (task_name, start_time, end_time, status, list_name, list_id, task_date, notes ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-        [task_name, start_time, end_time, false, list_name, list_id, task_date, notes]
-      );
-
-      // Increment the task_count for the corresponding list_id in the lists table
-      await pool.query(
-        "UPDATE lists SET task_count = task_count + 1 WHERE list_id = $1",
-        [finalListId]
-      );
-
-      // Commit the transaction
-      pool.query("COMMIT", (commitErr) => {
-        if (commitErr) {
-          console.error("Error committing transaction:", commitErr);
-          res
-            .status(500)
-            .json({ error: "Internal server error when committing" });
-          return;
-        }
-
-        res.status(201).json({ message: "Task created successfully" });
-      });
-    } catch (error) {
-      // Rollback the transaction in case of an error
-      pool.query("ROLLBACK", (rollbackErr) => {
-        if (rollbackErr) {
-          console.error("Error rolling back transaction:", rollbackErr);
-        }
-        console.error("Error creating new task:", error);
-        res.status(500).json({ error: "Internal server error" });
-      });
-    }
-  });
+    res.status(201).json(newTaskResult.rows[0]);
+  } catch (error) {
+    await pool.query("ROLLBACK");
+    console.error("Error creating new task:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
-const getTasksForToday = (req: Request, res: Response): void => {
-  // Retrieve tasks for today's date from the database
-  pool.query(
-    "SELECT * FROM tasks WHERE DATE(due_datetime) = $1",
-    [todayDate],
-    (err, result) => {
-      if (err) {
-        console.error("Error retrieving tasks for today:", err);
-        res.status(500).json({ error: "Internal server error" });
-        return;
-      }
-
-      const tasks = result.rows;
-      res.status(200).json(tasks);
+const getTasksForToday = async (req: CustomRequest, res: Response) => {
+  try {
+    // Extract user ID from the request set by the middleware
+    const userId = req.user;
+    
+    // Fetch the username for the user
+    const userResult = await pool.query("SELECT user_name FROM users WHERE user_id = $1", [userId]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
     }
-  );
+    const username = userResult.rows[0].user_name;
+
+    // Fetch the list IDs for the user
+    const listResult = await pool.query("SELECT list_id FROM lists WHERE user_id = $1", [userId]);
+    if (listResult.rows.length === 0) {
+      return res.status(404).json({ error: "No lists found for the user" });
+    }
+    const listIds = listResult.rows.map(row => row.list_id);
+
+    // Get today's date in the required format
+    const todayDate = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+
+    // Fetch tasks for today's date and the list IDs
+    const tasksResult = await pool.query(
+      "SELECT * FROM tasks WHERE task_date = $1 AND list_id = ANY($2::int[])",
+      [todayDate, listIds]
+    );
+
+    const tasks = tasksResult.rows;
+
+    // Send the response with username and tasks
+    res.status(200).json( tasks );
+  } catch (err) {
+    console.error("Error retrieving tasks for today:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
 const getTasksForDate = (req: Request, res: Response): void => {
@@ -215,20 +208,19 @@ const getCompletedTasksForDate = (req: Request, res: Response): void => {
     }
   );
 };
-const getAllTasks = (req: Request, res: Response): void => {
-  pool.query("SELECT * FROM tasks ", (err, result) => {
-    if (err) {
-      console.error("Error retrieving tasks for today:", err);
-      res.status(500).json({ error: "Internal server error" });
-      return;
-    }
 
+const getAllTasks = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const result = await pool.query("SELECT * FROM tasks");
     const tasks = result.rows;
     res.status(200).json(tasks);
-  });
+  } catch (err) {
+    console.error("Error retrieving tasks:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
-export const deleteTask = (req: Request, res: Response): void => {
+const deleteTask = (req: Request, res: Response): void => {
   const taskId = req.params.task_id;
   pool.query(
     "DELETE FROM tasks WHERE task_id = $1",
@@ -260,4 +252,5 @@ export {
   getCompletedTasksForToday,
   getCompletedTasksForDate,
   getAllTasks,
+  deleteTask
 };

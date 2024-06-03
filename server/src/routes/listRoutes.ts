@@ -1,9 +1,14 @@
 import express, { Router } from 'express';
-import {getAllLists} from '../Controllers/listController'
+import {getAllLists, newList} from '../Controllers/listController'
 
 const router: Router = express.Router();
 
-router.get('/', getAllLists)
+const authorization = require("../middleware/authorization")
+
+router.get('/all', authorization, getAllLists)
+
+// create new list
+router.post('/', authorization, newList)
 
 
 export default router

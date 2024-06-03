@@ -6,13 +6,8 @@ import CalenderW from "../images/calender-w.png";
 import Notes from "./Notes";
 import notes from "../images/notes.png";
 import notesW from "../images/notes-w.png";
-import {List} from "../interfaces"
-import {
-  formatNumberToTime,
-  formatTimeRangeAmPm,
-  formatDay,
-} from "../utils";
-
+import { List } from "../interfaces";
+import { formatNumberToTime, formatTimeRangeAmPm, formatDay } from "../utils";
 
 const CreateTask: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -25,44 +20,57 @@ const CreateTask: React.FC = () => {
   const [day, setDay] = useState<string>("");
   const [currentList, setCurrentList] = useState<number | null>(null);
 
+  const fetchLists = async () => {
+    try {
+      const res = await fetch("http://localhost:4000/lists/all", {
+        method: "GET",
+        headers: { token: localStorage.token },
+      });
+      // Check if the response was successful
+      if (!res.ok) {
+        throw new Error("Failed to fetch lists");
+      }
+      // Parse the response body as JSON
+      const parseData = await res.json();
+
+      // Update state with the fetched lists
+      setLists(parseData.lists);
+    } catch (err) {
+      console.error("Error fetching lists:", err);
+    }
+  };
+
   useEffect(() => {
-    fetch("http://localhost:4000/lists/")
-      .then((response) => response.json())
-      .then((data: List[]) => setLists(data));
+    fetchLists();
   }, []);
+
+  useEffect(() => {
+    if (lists && lists.length > 0) {
+      setCurrentList(lists[0].list_id);
+    }
+  }, [lists]);
 
   const addTask = async () => {
     const url = "http://localhost:4000/tasks/";
 
     let data;
 
-    if(currentList){
+    if (currentList) {
       data = {
         task_name: taskName,
         start_time: formatNumberToTime(startTime),
         end_time: formatNumberToTime(endTime),
-        list_name: lists.find((list) => list.list_id === currentList)?.list_name,
+        list_name: lists.find((list) => list.list_id === currentList)
+          ?.list_name,
         task_date: day,
-        notes: note
+        notes: note,
       };
-    } else {
-      data = {
-        task_name: taskName,
-        start_time: formatNumberToTime(startTime),
-        end_time: formatNumberToTime(endTime),
-        list_id: 1000,
-        task_date: day,
-        notes: note
-      }
     }
-   
 
     try {
       const response = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { token: localStorage.token },
         body: JSON.stringify(data),
       });
 
@@ -79,7 +87,6 @@ const CreateTask: React.FC = () => {
   const handleClick = () => {
     addTask();
     setOpen(!open);
-
   };
 
   return (

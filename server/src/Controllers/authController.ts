@@ -2,6 +2,9 @@
 import { Request, Response } from "express";
 import { pool } from "../app";
 
+interface CustomRequest extends Request {
+  user?: string;
+}
 
 interface User {
   user_id: number;
@@ -12,36 +15,37 @@ interface User {
 
 const bcrypt = require("bcrypt");
 
-const jwtGenerator = require("../utils/jwtGenerator")
+const jwtGenerator = require("../utils/jwtGenerator");
 
-const loginUser = async(req: Request, res: Response): Promise<any> => {
-
+const loginUser = async (req: Request, res: Response): Promise<any> => {
   // 1. destructure the req.body
   const { email, password } = req.body;
 
-  
   const user = await pool.query<User>(
-
     // check if user doesn't exist (if not we throw an error)
     "SELECT * FROM users WHERE email = $1 ",
-    [email],);
+    [email]
+  );
 
-    if(user.rows.length == 0) {
-      return res.status(401).json("Password or email is incorrect");
-    }
+  if (user.rows.length == 0) {
+    return res.status(401).json({ err: "Password or email is incorrect" });
+  }
 
-    // Now we know user exists
-    //3. check if user password is correct using bcrypt
+  // Now we know user exists
+  //3. check if user password is correct using bcrypt
 
-    const validPassword: boolean = await bcrypt.compare(password, user.rows[0].password)
+  const validPassword: boolean = await bcrypt.compare(
+    password,
+    user.rows[0].password
+  );
 
-    if(!validPassword){
-      return res.status(401).json("Password or email is incorrect");
-    }
+  if (!validPassword) {
+    return res.status(401).json("Password or email is incorrect");
+  }
 
-    //Give the client the jwt token
-    const token = jwtGenerator(user.rows[0].user_id)
-    res.json(token)
+  //Give the client the jwt token
+  const token = jwtGenerator(user.rows[0].user_id);
+  res.json({ token: token });
 };
 
 const newUser = async (req: Request, res: Response): Promise<any> => {
@@ -70,27 +74,41 @@ const newUser = async (req: Request, res: Response): Promise<any> => {
       [user_name, email, bcryptPassword]
     );
 
-    const token = jwtGenerator(newUser.rows[0].user_id)
+    const token = jwtGenerator(newUser.rows[0].user_id);
 
-    res.json({token})
-    
+    res.json({ token });
   } catch (err) {
     console.error(err);
     res.status(500).send("Server error");
   }
- 
 };
 
 const isVerified = (req: Request, res: Response) => {
-
-  try{
-
-    res.json(true)
-
-  }catch (err) {
+  try {
+    res.json(true);
+  } catch (err) {
     console.error(err);
     res.status(500).send("Server error");
   }
-}
+};
+const getUserInfo = async (req: CustomRequest, res: Response) => {
+  try {
+    const userId = req.user;
+    const userResult = await pool.query(
+      "SELECT user_name FROM users WHERE user_id = $1",
+      [userId]
+    );
 
-export { loginUser, newUser, isVerified };
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const username = userResult.rows[0].user_name;
+    res.status(200).json({ username });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export { loginUser, newUser, isVerified, getUserInfo };

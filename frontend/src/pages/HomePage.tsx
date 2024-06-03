@@ -6,8 +6,12 @@ import CreateTask from "../components/CreateTask";
 import {Task} from "../interfaces"
 import {fetchTasks} from "../utils"
 
+interface HomePageProps {
+  setIsAuthenticated: (auth: boolean) => void;
+}
 
-const HomePage: React.FC = () => {
+
+const HomePage: React.FC<HomePageProps> = ({setIsAuthenticated}) => {
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedList, setSelectedList] = useState<string | null>(null); // null means 'all lists'
@@ -17,15 +21,12 @@ const HomePage: React.FC = () => {
     fetchTasks(selectedList, selectedDate, setTasks);
   }, [selectedList, selectedDate]);
 
-  useEffect(() => {
-
-  }, [])
-  
   return (
     <div className="flex h-screen">
+      
       <Sidebar selectedList={selectedList} setSelectedList={setSelectedList} tasks={tasks}/>
       <div className="flex flex-col w-full px-12 py-8 w-[65rem]">
-        <Header title="Good Morning, Marah" />
+        <Header  setIsAuthenticated={setIsAuthenticated} />
         <div className="flex-1 overflow-y-auto">
           <Tasksview
           setTasks={setTasks}

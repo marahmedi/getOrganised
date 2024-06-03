@@ -18,14 +18,28 @@ const Sidebar: React.FC<SideBarProps> = ({ selectedList, setSelectedList, tasks 
   const [lists, setLists] = useState<List[]>([]);
   const [totalTasks, setTotalTasks] = useState<number>(0);
   const [tasksForList, setTasksForList] = useState<tasksForList[]>([]);
+ 
 
-  const fetchLists = () => {
-    fetch("http://localhost:4000/lists/")
-      .then((response) => response.json())
-      .then((data: List[]) => setLists(data));
+  const fetchLists = async () => {
+    try {
+      const res = await fetch("http://localhost:4000/lists/all", {
+        method: "GET",
+        headers: { token: localStorage.token }
+      });
+      // Check if the response was successful
+      if (!res.ok) {
+        throw new Error('Failed to fetch lists');
+      }
+      // Parse the response body as JSON
+      const parseData = await res.json();
+  
+      // Update state with the fetched lists
+      setLists(parseData.lists);
+    } catch (err) {
+      console.error('Error fetching lists:', err);
+      
+    }
   };
-
-  console.log(lists)
 
   useEffect(() => {
     fetchLists();

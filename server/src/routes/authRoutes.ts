@@ -1,6 +1,6 @@
 // authRoutes.ts
 import express, { Router } from 'express';
-import { loginUser, newUser, isVerified } from '../controllers/authController';
+import { loginUser, newUser, isVerified, getUserInfo } from '../controllers/authController';
 
 const validInfo = require("../middleware/validInfo")
 const authorization = require("../middleware/authorization");
@@ -14,6 +14,9 @@ router.post('/login',validInfo, loginUser);
 router.post('/signup',validInfo, newUser);
 
 //GET route to verify user with token
-router.get('/is-verify',authorization, isVerified)
+router.post('/is-verify',authorization, isVerified)
+
+// GET route to fetch user info
+router.get('/user-info', authorization, getUserInfo);
 
 export default router;

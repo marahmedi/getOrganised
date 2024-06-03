@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import Signup from "../components/Signup";
 import Login from "../components/Login";
@@ -10,6 +10,13 @@ interface UserPageProps {
 
 const UserPage: React.FC<UserPageProps> = ({isAuthenticated, setIsAuthenticated}) => {
   const [showSignUp, setShowSignUp] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      setIsAuthenticated(true);
+    }
+  }, []);
 
   if (isAuthenticated) {
     return <Navigate to="/" />;
