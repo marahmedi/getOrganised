@@ -49,7 +49,16 @@ const createTask = async (req: Request, res: Response): Promise<void> => {
     // Insert the new task into the database using the finalListId
     const newTaskResult = await pool.query(
       "INSERT INTO tasks (task_name, start_time, end_time, status, list_name, list_id, task_date, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
-      [task_name, start_time, end_time, false, list_name, finalListId, task_date, notes]
+      [
+        task_name,
+        start_time,
+        end_time,
+        false,
+        list_name,
+        list_id,
+        task_date,
+        notes,
+      ]
     );
 
     await pool.query("COMMIT");
@@ -66,23 +75,29 @@ const getTasksForToday = async (req: CustomRequest, res: Response) => {
   try {
     // Extract user ID from the request set by the middleware
     const userId = req.user;
-    
+
     // Fetch the username for the user
-    const userResult = await pool.query("SELECT user_name FROM users WHERE user_id = $1", [userId]);
+    const userResult = await pool.query(
+      "SELECT user_name FROM users WHERE user_id = $1",
+      [userId]
+    );
     if (userResult.rows.length === 0) {
       return res.status(404).json({ error: "User not found" });
     }
     const username = userResult.rows[0].user_name;
 
     // Fetch the list IDs for the user
-    const listResult = await pool.query("SELECT list_id FROM lists WHERE user_id = $1", [userId]);
+    const listResult = await pool.query(
+      "SELECT list_id FROM lists WHERE user_id = $1",
+      [userId]
+    );
     if (listResult.rows.length === 0) {
       return res.status(404).json({ error: "No lists found for the user" });
     }
-    const listIds = listResult.rows.map(row => row.list_id);
+    const listIds = listResult.rows.map((row) => row.list_id);
 
     // Get today's date in the required format
-    const todayDate = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    const todayDate = new Date().toISOString().split("T")[0]; // Format: YYYY-MM-DD
 
     // Fetch tasks for today's date and the list IDs
     const tasksResult = await pool.query(
@@ -93,7 +108,7 @@ const getTasksForToday = async (req: CustomRequest, res: Response) => {
     const tasks = tasksResult.rows;
 
     // Send the response with username and tasks
-    res.status(200).json( tasks );
+    res.status(200).json(tasks);
   } catch (err) {
     console.error("Error retrieving tasks for today:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -209,10 +224,32 @@ const getCompletedTasksForDate = (req: Request, res: Response): void => {
   );
 };
 
-const getAllTasks = async (req: Request, res: Response): Promise<void> => {
+const getAllTasks = async (
+  req: CustomRequest,
+  res: Response
+): Promise<void> => {
   try {
-    const result = await pool.query("SELECT * FROM tasks");
+    // Extract user ID from the request set by the middleware
+    const userId = req.user;
+
+    // Fetch the list IDs for the user
+    const listResult = await pool.query(
+      "SELECT list_id FROM lists WHERE user_id = $1",
+      [userId]
+    );
+    if (listResult.rows.length === 0) {
+      res.status(404).json({ error: "No lists found for the user" });
+      return;
+    }
+    const listIds = listResult.rows.map((row) => row.list_id);
+
+    const result = await pool.query(
+      "SELECT * FROM tasks where list_id = ANY($1::int[])",
+      [listIds]
+    );
     const tasks = result.rows;
+
+    // Send the response with username and tasks
     res.status(200).json(tasks);
   } catch (err) {
     console.error("Error retrieving tasks:", err);
@@ -252,5 +289,5 @@ export {
   getCompletedTasksForToday,
   getCompletedTasksForDate,
   getAllTasks,
-  deleteTask
+  deleteTask,
 };
