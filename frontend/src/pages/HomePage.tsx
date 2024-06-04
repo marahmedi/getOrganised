@@ -29,12 +29,14 @@ const HomePage: React.FC<HomePageProps> = ({setIsAuthenticated}) => {
         <Header  setIsAuthenticated={setIsAuthenticated} />
         <div className="flex-1 overflow-y-auto">
           <Tasksview
+          selectedDate={selectedDate}
+          selectedList={selectedList}
           setTasks={setTasks}
           tasks={tasks}
           />
         </div>
         <div className="flex-none">
-          <CreateTask />
+          <CreateTask selectedDate={selectedDate} selectedList={selectedList} setTasks={setTasks} />
         </div>
       </div>
     </div>

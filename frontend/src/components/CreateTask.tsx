@@ -6,10 +6,25 @@ import CalenderW from "../images/calender-w.png";
 import Notes from "./Notes";
 import notes from "../images/notes.png";
 import notesW from "../images/notes-w.png";
-import { List } from "../interfaces";
-import { formatNumberToTime, formatTimeRangeAmPm, formatDay } from "../utils";
+import { List, Task } from "../interfaces";
+import {
+  formatNumberToTime,
+  formatTimeRangeAmPm,
+  formatDay,
+  fetchTasks,
+} from "../utils";
 
-const CreateTask: React.FC = () => {
+interface CreateTaskProps {
+  selectedList: string | null;
+  selectedDate: string | null;
+  setTasks: (value: Task[]) => void;
+}
+
+const CreateTask: React.FC<CreateTaskProps> = ({
+  selectedDate,
+  selectedList,
+  setTasks,
+}) => {
   const [open, setOpen] = useState(false);
   const [dateTimeView, setShowDateTimeView] = useState(true);
   const [lists, setLists] = useState<List[]>([]);
@@ -18,7 +33,7 @@ const CreateTask: React.FC = () => {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [endTime, setEndTime] = useState<number | null>(null);
   const [day, setDay] = useState<string>("");
-  const [currentList, setCurrentList] = useState<number | null>(null);
+  const [currentList, setCurrentList] = useState<number | string>("");
 
   const modalRef = useRef<HTMLDivElement | null>(null);
 
@@ -65,25 +80,28 @@ const CreateTask: React.FC = () => {
 
   useEffect(() => {
     fetchLists();
-  }, []);
-
-  useEffect(() => {
-    if (lists && lists.length > 0) {
-      setCurrentList(lists[0].list_id);
-    }
   }, [lists]);
 
   const addTask = async () => {
     const url = "http://localhost:4000/tasks/";
     let data;
 
+    const findListName = (list: List) => {
+      if(list.list_id === currentList) {
+        return list.list_name;
+      } else {
+        return 'should be list name'
+      }
+    };
+    
+
     if (currentList) {
       data = {
         task_name: taskName,
         start_time: formatNumberToTime(startTime),
         end_time: formatNumberToTime(endTime),
-        list_name: lists.find((list) => list.list_id === currentList)
-          ?.list_name,
+        list_id: currentList,
+        list_name: lists.forEach(findListName),
         task_date: day,
         notes: note,
       };
@@ -91,7 +109,7 @@ const CreateTask: React.FC = () => {
 
     try {
       const response = await fetch(url, {
-        method: 'POST',
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           token: localStorage.token,
@@ -104,6 +122,7 @@ const CreateTask: React.FC = () => {
       }
 
       const result = await response.json();
+      fetchTasks(selectedList, selectedDate, setTasks);
       console.log("Success:", result);
     } catch (error) {
       console.error("Error:", error);
@@ -151,11 +170,14 @@ const CreateTask: React.FC = () => {
             </div>
             <div className="mt-1 flex">
               <select
-                onChange={(e) => setCurrentList(parseInt(e.target.value))}
-                value={currentList || ""}
+                onChange={(e) => setCurrentList(e.target.value)}
+                value={currentList}
                 className="w-[22rem] h-[2.5rem] mr-3 border-2 border-gray-200 rounded-xl px-2"
               >
-                {lists.map((list, index) => (
+                <option value="" disabled>
+                  Select a list
+                </option>
+                {lists.map((list) => (
                   <option key={list.list_id} value={list.list_id}>
                     {list.list_name}
                   </option>

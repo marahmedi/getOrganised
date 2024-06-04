@@ -8,9 +8,11 @@ import ActionsModal from "../components/ActionsModal";
 interface TaskViewProps {
   tasks: Task[];
   setTasks: (value: Task[]) => void;
+  selectedList: string | null;
+  selectedDate: string | null;
 }
 
-const Tasksview: React.FC<TaskViewProps> = ({ tasks, setTasks }) => {
+const Tasksview: React.FC<TaskViewProps> = ({ tasks, setTasks, selectedList, selectedDate }) => {
 
   const [activeTaskIndex, setActiveTaskIndex] = useState<number | null>(null);
 
@@ -52,7 +54,7 @@ const Tasksview: React.FC<TaskViewProps> = ({ tasks, setTasks }) => {
             </div>
           </div>
           {activeTaskIndex === index && (
-            <ActionsModal tasks={tasks} setTasks={setTasks} setActiveTaskIndex={setActiveTaskIndex} taskId={task.task_id} notes={task.notes} />
+            <ActionsModal selectedDate={selectedDate} selectedList={selectedList} setTasks={setTasks} setActiveTaskIndex={setActiveTaskIndex} taskId={task.task_id} notes={task.notes} />
           )}
         </React.Fragment>
       ))}
