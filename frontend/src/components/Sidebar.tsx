@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { List, Task } from "../interfaces";
+import NewList from "./NewList";
+import AddIcon from "../images/plus.png";
 
 interface SideBarProps {
   selectedList: string | null;
   setSelectedList: (value: string | null) => void;
-  tasks: Task[]
+  tasks: Task[];
 }
 
 interface tasksForList {
@@ -12,32 +14,33 @@ interface tasksForList {
   task_count: number;
 }
 
-const Sidebar: React.FC<SideBarProps> = ({ selectedList, setSelectedList, tasks }) => {
-  
-
+const Sidebar: React.FC<SideBarProps> = ({
+  selectedList,
+  setSelectedList,
+  tasks,
+}) => {
+  const [showNewList, setShowNewList] = useState<boolean>(false);
   const [lists, setLists] = useState<List[]>([]);
   const [totalTasks, setTotalTasks] = useState<number>(0);
   const [tasksForList, setTasksForList] = useState<tasksForList[]>([]);
- 
 
   const fetchLists = async () => {
     try {
       const res = await fetch("http://localhost:4000/lists/all", {
         method: "GET",
-        headers: { token: localStorage.token }
+        headers: { token: localStorage.token },
       });
       // Check if the response was successful
       if (!res.ok) {
-        throw new Error('Failed to fetch lists');
+        throw new Error("Failed to fetch lists");
       }
       // Parse the response body as JSON
       const parseData = await res.json();
-  
+
       // Update state with the fetched lists
       setLists(parseData.lists);
     } catch (err) {
-      console.error('Error fetching lists:', err);
-      
+      console.error("Error fetching lists:", err);
     }
   };
 
@@ -52,14 +55,19 @@ const Sidebar: React.FC<SideBarProps> = ({ selectedList, setSelectedList, tasks 
 
   const updateTaskCounts = () => {
     const taskCounts = lists.map((list) => {
-      const taskCount = tasks.filter(task => task.list_id === list.list_id).length;
+      const taskCount = tasks.filter(
+        (task) => task.list_id === list.list_id
+      ).length;
       return { list_name: list.list_name, task_count: taskCount };
     });
     setTasksForList(taskCounts);
   };
 
   const getClassName = (listName: string) => {
-    return selectedList === listName || (listName === "All" && selectedList === null) ? "bg-gray-50" : "";
+    return selectedList === listName ||
+      (listName === "All" && selectedList === null)
+      ? "bg-gray-50"
+      : "";
   };
 
   return (
@@ -92,6 +100,14 @@ const Sidebar: React.FC<SideBarProps> = ({ selectedList, setSelectedList, tasks 
           </li>
         ))}
       </ul>
+      {!showNewList ? (
+        <button onClick={()=> setShowNewList(!showNewList)} className="flex items-center gap-4 justify-start p-3 px-5 text-sm w-full h-[3rem] bg-gray-50 rounded-xl ">
+          <img className="w-[1rem] h-[1rem]" src={AddIcon} alt="plus icon" />{" "}
+          <p>Create New List</p>
+        </button>
+      ) : (
+        <NewList setLists={setLists} setShowNewList={setShowNewList} />
+      )}
     </aside>
   );
 };

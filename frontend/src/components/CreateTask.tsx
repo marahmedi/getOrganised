@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import CreateTaskBtn from "./CreateTaskBtn";
 import calender from "../images/calender.png";
 import Calender from "./Calender";
@@ -20,11 +20,34 @@ const CreateTask: React.FC = () => {
   const [day, setDay] = useState<string>("");
   const [currentList, setCurrentList] = useState<number | null>(null);
 
+  const modalRef = useRef<HTMLDivElement | null>(null);
+
+  const handleClickOutside = (event: { target: any }) => {
+    if (modalRef.current && !modalRef.current.contains(event.target)) {
+      setOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    // Cleanup event listener on component unmount
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [open]);
+
   const fetchLists = async () => {
     try {
       const res = await fetch("http://localhost:4000/lists/all", {
         method: "GET",
-        headers: { token: localStorage.token },
+        headers: {
+          token: localStorage.token,
+        },
       });
       // Check if the response was successful
       if (!res.ok) {
@@ -52,7 +75,6 @@ const CreateTask: React.FC = () => {
 
   const addTask = async () => {
     const url = "http://localhost:4000/tasks/";
-
     let data;
 
     if (currentList) {
@@ -69,8 +91,11 @@ const CreateTask: React.FC = () => {
 
     try {
       const response = await fetch(url, {
-        method: "POST",
-        headers: { token: localStorage.token },
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          token: localStorage.token,
+        },
         body: JSON.stringify(data),
       });
 
@@ -90,8 +115,8 @@ const CreateTask: React.FC = () => {
   };
 
   return (
-    <div>
-      {open === false ? (
+    <div ref={modalRef}>
+      {!open ? (
         <CreateTaskBtn setOpen={setOpen} />
       ) : (
         <div

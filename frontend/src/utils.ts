@@ -1,4 +1,4 @@
-import { Task } from "./interfaces";
+import { Task, List } from "./interfaces";
 
 const getFormattedDate = (): string => {
   const date = new Date();
@@ -80,7 +80,7 @@ export const formatTimeRange = (startTime: string, endTime: string): string => {
     selectedDate: string | null,
     setTasks: (value: Task[]) => void
   ) => {
-    let url = "http://localhost:4000/tasks/today";
+    let url = "http://localhost:4000/tasks/all";
     
     if (selectedList && selectedDate) {
       url = `http://localhost:4000/tasks/list/${selectedList}/date/${selectedDate}`;
@@ -194,6 +194,26 @@ export const formatNumberToTime = (input: number | null): string => {
   
     // Return the formatted string without the year
     return `${dayNumber}${daySuffix} ${month}`;
+  };
+
+  export const fetchLists = async (setLists:(value: List[]) => void ) => {
+    try {
+      const res = await fetch("http://localhost:4000/lists/all", {
+        method: "GET",
+        headers: { token: localStorage.token },
+      });
+      // Check if the response was successful
+      if (!res.ok) {
+        throw new Error("Failed to fetch lists");
+      }
+      // Parse the response body as JSON
+      const parseData = await res.json();
+
+      // Update state with the fetched lists
+      setLists(parseData.lists);
+    } catch (err) {
+      console.error("Error fetching lists:", err);
+    }
   };
 
   

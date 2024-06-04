@@ -33,9 +33,7 @@ const Header: React.FC<HeaderProps> = ({ setIsAuthenticated }) => {
 
   const logout = async (e: { preventDefault: () => void; }) => {
     e.preventDefault();
-    
     try{
-
       localStorage.removeItem("token");
       setIsAuthenticated(false);
 
@@ -69,7 +67,7 @@ const Header: React.FC<HeaderProps> = ({ setIsAuthenticated }) => {
               alt="arrow down"
             />
           </button>
-          <span>Today</span>
+          <span>All</span>
         </div>
       </div>
     </div>
