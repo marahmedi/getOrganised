@@ -257,17 +257,30 @@ const getAllTasks = async (
   }
 };
 
-const deleteTask = (req: Request, res: Response): void => {
-  const taskId = req.params.task_id;
-  pool.query(
-    "DELETE FROM tasks WHERE task_id = $1",
-    [taskId],
-    (err, result) => {
-      if (err) {
-        console.error("Error deleting this task:", err);
-        res.status(500).json({ error: "Internal server error" });
-        return;
-      }
+const deleteTask = async(req: CustomRequest, res: Response) => {
+  try{
+    const userId = req.user;
+    const taskId = req.params.task_id;
+
+     // Fetch the list IDs for the user
+     const listResult = await pool.query(
+      "SELECT list_id FROM lists WHERE user_id = $1",
+      [userId]
+    );
+    if (listResult.rows.length === 0) {
+      res.status(404).json({ error: "No lists found for the user" });
+      return
+    }
+    const listIds = listResult.rows.map((row) => row.list_id);
+
+    const result = await pool.query(
+      "DELETE FROM tasks WHERE task_id = $1 AND list_id = ANY($2::int[])",
+      [taskId, listIds])
+      // if (err) {
+      //   console.error("Error deleting this task:", err);
+      //   res.status(500).json({ error: "Internal server error" });
+      //   return;
+      // }
 
       if (result.rowCount === 0) {
         res.status(404).json({ error: "Task not found" });
@@ -275,8 +288,13 @@ const deleteTask = (req: Request, res: Response): void => {
       }
 
       res.status(200).json({ message: "Task deleted successfully" });
-    }
-  );
+     
+  }catch(err){
+    console.error("Error deleting task:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+
+ 
 };
 
 export {
